@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <!-- <link rel="stylesheet" href="templateStyle.css"> -->
+    <style>
+        html, body{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body{
+            padding: 50px;
+        }
+        h1{
+            color: rgb(76, 90, 121);
+        }
+        tr{
+            background-color: rgb(230, 230, 230);
+            margin: 0 3px;
+        }
+        td,th{
+            padding: 4px 10px;
+        }
+        td img{
+            height: 60px;
+            width: auto;
+        }
+        .qp,th{
+            text-align: center;
+        }
+        .pn{
+            max-width: 350px;
+        }
+        footer{
+            background-color: lightgray;
+            padding: 15px 30px;
+        }
+        #tdprice{
+            text-align: end;
+        }
+        footer a{
+            color: rgb(39, 47, 73);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>RudyShop</h1>
+        <p>{{data.datenow}}</p>
+    </header>
+    <section>
+        <h2>Thank {{data.user_name}} for your purchase</h2>
+        <table>
+            <tr>
+                <th>Image</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+            </tr>
+            {{#each data.products}}
+                <tr>
+                    <td><img src="http://localhost:5000/products-imgs/{{this.img}}" alt=""></td>
+                    <td class="pn">{{this.product_name}}</td>
+                    <td class="qp">{{this.quantity}}</td>
+                    <td class="qp">{{this.price}} ₪/unity</td>
+                </tr>
+            {{/each}}
+            <tr>
+                <td colspan="4" id="tdprice">Total price : <strong>{{data.total_price}} ₪</strong></td>
+            </tr>
+        </table><br>
+        <div>
+            <h3>order information</h3>
+            <p>name: {{data.user_name}}</p>
+            <p>Receiving adress : {{data.received_adress}}, {{data.received_city}}</p>
+            <p>credit_card: **{{data.twoNumCard}}</p>
+            <p>Receiving Date: {{data.received_date}}</p>
+        </div>
+    </section><br><br>
+    <footer>
+        <div>*Is not a real receipt, is just a study project</div>
+        <a href="http://rudyshop.rudyattia.com">rudyshop.rudyattia.com</a>
+    </footer>
+
+</body>
+</html>
