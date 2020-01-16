@@ -1,90 +1,93 @@
 const router = require('express').Router();
 const app = require('express')();
-const db = require('../db')
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const verifytoken = require('../verifytoken')
+const db = require('../db');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const verToken = require('../verToken');
 
 db.Open(app).then((state) => {
-    if (state) { console.log('DB Server connected...') }
+    if (state) { console.log('DB connected...') }
 }).catch((err) => {
     console.log(err)
 })
 
 //Verify Token
-router.get('/verifytoken',verifytoken.all ,(req, res) => {
+router.get('/verToken',verToken.chk ,(req, res) => { //verifytoken
     res.json({ state: 'success', message: req.auth })
 });
 
 //GET ALL USERS
-router.get('/',verifytoken.admin ,(req, res) => {
+router.get('/',verToken.chkisadmin ,(req, res) => {
     const con = app.get('CONNECTION');
     let sql = `SELECT * FROM users`
-    con.query(sql, (err, result, fields) => {
+    con.query(sql, (err, result) => {
         if (err) {
             res.json({ state: 'error', message: err.message })
         } else {
             if (result.length > 0) {
                 res.json({ state: 'success', message: result })
             } else {
-                res.json({ state: 'error', message: `No results!!!` })
+                res.json({ state: 'error', message: `No results` })
             }
         }
     })
 });
 
 //GET USER
-router.get('/user',verifytoken.user ,(req, res) => {
+router.get('/getuser',verToken.chkuser ,(req, res) => {
     const con = app.get('CONNECTION');
-    let sql = `SELECT * FROM users WHERE t_z = ${req.auth.user_id}`
-    con.query(sql, (err, result, fields) => {
+    let sql = `SELECT * FROM users WHERE id = ${req.auth.userid}`
+    con.query(sql, (err, result) => {
         if (err) {
             res.json({ state: 'error', message: err.message })
         } else {
             if (result.length > 0) {
                 res.json({ state: 'success', message: result })
             } else {
-                res.json({ state: 'error', message: `No results!!!` })
+                res.json({ state: 'error', message: `No results` })
             }
         }
     })
 });
 
 //VERIFY ID OR MAIL NOT EXIST
-router.post('/verifidmail',(req,res)=>{
+router.post('/verExistUser',(req, res)=>{ //verifidmail
     const con = app.get('CONNECTION');
-    let sql = `SELECT * FROM users WHERE t_z=${req.body.user_id} OR mail='${req.body.email}'`
-    con.query(sql, (err, result, fields) => {
+    let sql = `SELECT * FROM users WHERE id=${req.body.userid} OR email='${req.body.email}'`
+    con.query(sql, (err, result) => {
         if (err) {
             res.json({ state: 'error', message: err.message })
         } else {
             if (result.length === 0) {
                 res.json({ state: 'success', message: result })
             } else {
-                res.json({ state: 'error', message: `id or mail already exist` })
+                res.json({ state: 'error', message: `User already exist` })
             }
         }
     })
 })
 
 //ADD NEW USER
-router.post('/add',async (req,res)=>{
-    let {user_id, first_name, last_name, email, password, city, adress } = req.body;
+router.post('/adduser',async (req,res)=>{
+    let {userid, fname, lname, email, password, city, street } = req.body;
     const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt)
-    if (!user_id || !first_name || !last_name || !email || !password || !city || !adress) {
-        res.json({ state: 'error', message: 'not all input' })
+    let p_hash;
+    if (password) {
+         p_hash = await bcrypt.hash(password, salt);
+    }
+    if (!userid || !fname || !lname || !email || !password || !city || !street) {
+        res.json({ state: 'error', message: 'Missing fields' })
     }
     else {
         console.log(req.body)
         const con = app.get('CONNECTION');
-        sql = `INSERT INTO users(t_z, first_name, last_name, mail, password_hach, city, adress)
-                VALUES (${user_id},'${first_name}','${last_name}','${email}','${password_hash}','${city}','${adress}')`
-        con.query(sql, (err, result, fields) => {
+        sql = `INSERT INTO users(id, fname, lname, email, password, city, street)
+                VALUES (${userid},'${fname}','${lname}','${email}','${p_hash}','${city}','${street}')`
+        con.query(sql, (err) => {
             if (err) {
                 res.json({ state: 'error', message: err.message })
             } else {
-                res.json({ state: 'success', message: 'new member created' })
+                res.json({ state: 'success', message: 'User created' })
             }
         })
     }
@@ -92,43 +95,43 @@ router.post('/add',async (req,res)=>{
 
 //USER LOGIN
 router.post('/login', async (req, res) => {
-    let { mail, password } = req.body;
+    let { email, password } = req.body;
     const con = app.get('CONNECTION');
-    sql = `SELECT * FROM users WHERE mail='${mail}'`
-    con.query(sql, async (err, result, fields) => {
+    sql = `SELECT * FROM users WHERE email='${email}'`
+    con.query(sql, async (err, result) => {
         if (err) {
             res.json({ state: 'error', message: err.message })
         } else {
             if (result.length > 0) {
-                const valid_password = await bcrypt.compare(password, result[0].password_hach)
-                if (valid_password) {
-                    jwt.sign({ mail: result[0].mail, admin: result[0].admin, first_name:result[0].first_name, last_name:result[0].last_name, user_id:result[0].t_z }, 'secretkey', (err, token) => {
+                const isValidPassword = await bcrypt.compare(password, result[0].password)
+                if (isValidPassword) {
+                    jwt.sign({ email: result[0].email, isadmin: result[0].isadmin, fname:result[0].fname, lname:result[0].lname, userid:result[0].id }, 'secretkey', (err, token) => {
                         if (err) { res.json({ state: 'error', message: err.message }) }
-                        else { res.json({state:'success', message: { token, first_name: result[0].first_name, last_name: result[0].last_name,admin: result[0].admin } }) }
+                        else { res.json({state:'success', message: { token, fname: result[0].fname, lname: result[0].lname,isadmin: result[0].isadmin } }) }
                     });
                 }
                 else {
-                    res.json({ state: 'error', message: `password wrong` })
+                    res.json({ state: 'error', message: `Wrong password` })
                 }
             } else {
-                res.json({ state: 'error', message: `email not exist` })
+                res.json({ state: 'error', message: `Wrong user` })
             }
         }
     })
 })
 
 //GET COUNT PRODUCTS AND COUNT ORDERS
-router.get('/infocount',(req, res) => {
+router.get('/totalordprod',(req, res) => { // infocount
     const con = app.get('CONNECTION');
-    let sql = `SELECT COUNT(product_id) AS countInfo FROM products UNION SELECT COUNT(order_id) FROM orders`
-    con.query(sql, (err, result, fields) => {
+    let sql = `SELECT COUNT(id) AS prodtoal FROM prods UNION SELECT COUNT(id) FROM orders`
+    con.query(sql, (err, result) => {
         if (err) {
             res.json({ state: 'error', message: err.message })
         } else {
             if (result.length > 0) {
                 res.json({ state: 'success', message: result })
             } else {
-                res.json({ state: 'error', message: `No results!!!` })
+                res.json({ state: 'error', message: `No results` })
             }
         }
     })

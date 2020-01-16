@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 //VERIFY TOKEN ALL
-function all(req,res,next){
+function chk(req, res, next){
     const token = req.header('authorization');
     if(!token){
         res.status(401).json( {state: 'error', message: 'Token not found' })
@@ -18,17 +18,17 @@ function all(req,res,next){
 }
 
 //VERIFY TOKEN USER
-function user(req,res,next){
+function chkuser(req, res, next){
     const token = req.header('authorization');
     if(!token){
-        res.status(401).json( {state: 'error', message: 'token not found' })
+        res.status(401).json( {state: 'error', message: 'Token not found' })
     }
     else{
         jwt.verify(token, 'secretkey',(err,auth)=>{
-            if(err){res.status(400).json( {state: 'error', message: 'invalid token' })}
+            if(err){res.status(400).json( {state: 'error', message: 'Invalid token' })}
             else{
                 if(auth.admin){
-                    res.status(400).json( {state: 'error', message: 'admin not authorized' })
+                    res.status(400).json( {state: 'error', message: 'Not authorized' })
                 }
                 else{
                     console.log(auth);
@@ -41,17 +41,17 @@ function user(req,res,next){
 }
 
 //VERIFY TOKEN ADMIN
-function admin(req,res,next){
+function chkisadmin(req, res, next){
     const token = req.header('authorization');
     if(!token){
-        res.status(401).json( {state: 'error', message: 'token not found' })
+        res.status(401).json( {state: 'error', message: 'Token not found' })
     }
     else{
         jwt.verify(token, 'secretkey',(err,auth)=>{
-            if(err){res.status(400).json( {state: 'error', message: 'invalid token' })}
+            if(err){res.status(400).json( {state: 'error', message: 'Invalid token' })}
             else{
                 if(!auth.admin){
-                    res.status(400).json( {state: 'error', message: 'user not authorized' })
+                    res.status(400).json( {state: 'error', message: 'Not authorized' })
                 }
                 else{
                     console.log(auth);
@@ -63,4 +63,4 @@ function admin(req,res,next){
     }
 }
 
-module.exports = {all , user , admin};
+module.exports = {chk , chkuser , chkisadmin};
