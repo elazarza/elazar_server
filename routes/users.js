@@ -11,29 +11,13 @@ db.Open(app).then((state) => {
     console.log(err)
 })
 
-//Verify Token
-router.get('/verToken',verToken.chk ,(req, res) => { //verifytoken
+// Verify Token
+router.get('/verToken',verToken.chk ,(req, res) => {
     res.json({ state: 'success', message: req.auth })
 });
 
-//GET ALL USERS
-router.get('/',verToken.chkisadmin ,(req, res) => {
-    const con = app.get('CONNECTION');
-    let sql = `SELECT * FROM users`
-    con.query(sql, (err, result) => {
-        if (err) {
-            res.json({ state: 'error', message: err.message })
-        } else {
-            if (result.length > 0) {
-                res.json({ state: 'success', message: result })
-            } else {
-                res.json({ state: 'error', message: `No results` })
-            }
-        }
-    })
-});
 
-//GET USER
+// Get user
 router.get('/getuser',verToken.chkuser ,(req, res) => {
     const con = app.get('CONNECTION');
     let sql = `SELECT * FROM users WHERE id = ${req.auth.userid}`
@@ -50,10 +34,10 @@ router.get('/getuser',verToken.chkuser ,(req, res) => {
     })
 });
 
-//VERIFY ID OR MAIL NOT EXIST
-router.post('/verExistUser',(req, res)=>{ //verifidmail
+// Verify existing user
+router.post('/verExistUser',(req, res)=>{
     const con = app.get('CONNECTION');
-    let sql = `SELECT * FROM users WHERE id=${req.body.userid} OR email='${req.body.email}'`
+    let sql = `SELECT * FROM users WHERE id=${req.body.id} OR email='${req.body.email}'`
     con.query(sql, (err, result) => {
         if (err) {
             res.json({ state: 'error', message: err.message })
@@ -67,22 +51,22 @@ router.post('/verExistUser',(req, res)=>{ //verifidmail
     })
 })
 
-//ADD NEW USER
+// Add new user
 router.post('/adduser',async (req,res)=>{
-    let {userid, fname, lname, email, password, city, street } = req.body;
+    let {id, fname, lname, email, password, city, street } = req.body;
     const salt = await bcrypt.genSalt(10);
-    let p_hash;
+    let phash;
     if (password) {
-         p_hash = await bcrypt.hash(password, salt);
+         phash = await bcrypt.hash(password, salt);
     }
-    if (!userid || !fname || !lname || !email || !password || !city || !street) {
+    if (!id || !fname || !lname || !email || !password || !city || !street) {
         res.json({ state: 'error', message: 'Missing fields' })
     }
     else {
         console.log(req.body)
         const con = app.get('CONNECTION');
         sql = `INSERT INTO users(id, fname, lname, email, password, city, street)
-                VALUES (${userid},'${fname}','${lname}','${email}','${p_hash}','${city}','${street}')`
+                VALUES (${id},'${fname}','${lname}','${email}','${phash}','${city}','${street}')`
         con.query(sql, (err) => {
             if (err) {
                 res.json({ state: 'error', message: err.message })
@@ -93,7 +77,7 @@ router.post('/adduser',async (req,res)=>{
     }
 })
 
-//USER LOGIN
+// Login
 router.post('/login', async (req, res) => {
     let { email, password } = req.body;
     const con = app.get('CONNECTION');
@@ -109,8 +93,7 @@ router.post('/login', async (req, res) => {
                         if (err) { res.json({ state: 'error', message: err.message }) }
                         else { res.json({state:'success', message: { token, fname: result[0].fname, lname: result[0].lname,isadmin: result[0].isadmin } }) }
                     });
-                }
-                else {
+                } else {
                     res.json({ state: 'error', message: `Wrong password` })
                 }
             } else {
@@ -120,8 +103,8 @@ router.post('/login', async (req, res) => {
     })
 })
 
-//GET COUNT PRODUCTS AND COUNT ORDERS
-router.get('/totalordprod',(req, res) => { // infocount
+// Get total prods ords
+router.get('/totalordprod',(req, res) => {
     const con = app.get('CONNECTION');
     let sql = `SELECT COUNT(id) AS prodtoal FROM prods UNION SELECT COUNT(id) FROM orders`
     con.query(sql, (err, result) => {

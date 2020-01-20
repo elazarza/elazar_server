@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-//VERIFY TOKEN ALL
+// Verify token
 function chk(req, res, next){
     const token = req.header('authorization');
     if(!token){
@@ -17,7 +17,7 @@ function chk(req, res, next){
     }
 }
 
-//VERIFY TOKEN USER
+// Verify user
 function chkuser(req, res, next){
     const token = req.header('authorization');
     if(!token){
@@ -40,7 +40,7 @@ function chkuser(req, res, next){
     }
 }
 
-//VERIFY TOKEN ADMIN
+// Verify admin
 function chkisadmin(req, res, next){
     const token = req.header('authorization');
     if(!token){
@@ -50,7 +50,7 @@ function chkisadmin(req, res, next){
         jwt.verify(token, 'secretkey',(err,auth)=>{
             if(err){res.status(400).json( {state: 'error', message: 'Invalid token' })}
             else{
-                if(!auth.admin){
+                if(!auth.isadmin){
                     res.status(400).json( {state: 'error', message: 'Not authorized' })
                 }
                 else{
